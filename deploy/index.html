@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f23">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>勇者登塔</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<style>
+:root{--bg:#0f0f23;--panel:#1a1a2e;--panel2:#16213e;--line:#2a2a4a;--txt:#e8e8f0;--gold:#ffd700;--hp:#ff4757;--mp:#3742fa;--ok:#2ed573;--warn:#ffa502}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.6;padding-bottom:env(safe-area-inset-bottom)}
+.hide{display:none!important}
+.title{font-size:20px;font-weight:700;color:var(--gold);text-align:center;padding:14px 0 6px;text-shadow:0 0 12px rgba(255,215,0,.3)}
+.day{text-align:center;color:#aaa;font-size:13px;margin-bottom:8px}
+.gold{color:var(--gold);text-align:center;padding:6px;font-weight:600}
+.warn{color:var(--warn);text-align:center;padding:6px}
+.love{color:#ff6b81;text-align:center;padding:6px}
+.floor{text-align:center;color:#888;font-size:12px;padding:6px}
+.stat{display:flex;align-items:center;gap:8px;padding:4px 14px;font-size:13px}
+.stat span{width:52px;color:#aaa}
+.stat b{width:88px;text-align:right;font-size:12px;color:#888}
+.bar{flex:1;height:14px;background:#222;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#ff6b6b,#ff4757);border-radius:8px;transition:.3s}
+.bar.mp i{background:linear-gradient(90deg,#4a69bd,#3742fa)}
+.job{margin:6px 14px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;font-size:13px}
+.job b{color:var(--gold)}
+.job small,.skill small,.girl small{color:#888;font-size:11px}
+.eq{text-align:center;font-size:12px;color:#bbb;padding:4px 14px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:8px 14px;font-size:13px;color:#ccc}
+.grid div{background:var(--panel);border-radius:6px;padding:6px;text-align:center;border:1px solid var(--line)}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:10px;padding:11px 16px;font-size:15px;background:var(--panel2);color:var(--txt);border:1px solid var(--line);transition:.15s;width:100%;margin:4px 0}
+button:active{transform:scale(.96)}
+button:disabled{opacity:.4}
+.skill{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px}
+.skill button{width:auto;margin:0;background:#2d3436;font-size:13px;padding:8px 12px}
+.skill span{font-size:14px}
+.li{text-align:left;background:var(--panel);display:block}
+.li.on{background:#2d3436;border-color:var(--gold)}
+.sub{color:var(--gold);font-size:13px;font-weight:700;padding:12px 14px 2px}
+.list{padding:0 10px}
+.empty{text-align:center;color:#666;padding:10px}
+.girl{margin:8px 12px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.girl.on{border-color:var(--gold);background:var(--panel2)}
+.gname{font-weight:700;color:var(--gold);margin-bottom:4px}
+.grow{display:flex;gap:6px;margin:6px 0}
+.grow button{margin:0;font-size:12px;padding:6px;flex:1}
+.quote{font-style:italic;color:#999;font-size:12px;padding:4px 0 0}
+#log{height:150px;overflow-y:auto;background:#0a0a1a;border-top:2px solid var(--line);padding:8px 12px;font-size:12px;color:#9aa;margin-top:8px}
+#log div{padding:2px 0;border-bottom:1px solid #1a1a2e}
+#b_enemy,#b_player{text-align:center;padding:8px;font-size:15px;font-weight:700}
+#b_status{text-align:center;color:var(--warn);min-height:20px;font-size:13px}
+#b_skills{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:8px}
+#b_skills button{margin:0;font-size:12px;padding:10px 4px}
+.btns{display:flex;gap:8px;padding:8px}
+.btns button{margin:0}
+.bottom-nav{position:sticky;bottom:0;display:flex;gap:4px;padding:6px;background:var(--bg);border-top:1px solid var(--line)}
+.bottom-nav button{margin:0;font-size:12px;padding:8px 2px;flex:1}
+</style>
+
+</head>
+<body>
+
+<div id="p_main">
+  <div id="m_stat"></div>
+  <div class="btns">
+    <button id="b_rest">🛏️ 休息</button>
+    <button id="b_tower">🗼 进入塔</button>
+  </div>
+  <div class="btns">
+    <button id="b_floor10">⚡ 跳层</button>
+    <button id="save_btn">💾 存档</button>
+  </div>
+</div>
+
+<div id="p_battle" class="hide">
+  <div class="title" id="b_title"></div>
+  <div id="b_enemy"></div>
+  <div id="b_status"></div>
+  <hr style="border-color:#2a2a4a">
+  <div id="b_player"></div>
+  <div id="b_skills">
+    <button id="b_skill0"></button><button id="b_skill1"></button><button id="b_skill2"></button>
+  </div>
+  <div class="btns">
+    <button id="b_attack">⚔️ 攻击</button>
+    <button id="b_defend">🛡️ 防御</button>
+    <button id="b_flee">🏃 逃跑</button>
+  </div>
+  <button id="b_next" class="hide">⏭️ 下一层</button>
+</div>
+
+<div id="p_bag" class="hide"><div id="bag_body"></div></div>
+<div id="p_skill" class="hide"><div id="skill_body"></div></div>
+<div id="p_shop" class="hide"><div id="shop_body"></div></div>
+<div id="p_rel" class="hide"><div id="rel_body"></div></div>
+<div id="p_town" class="hide"><div id="town_body"></div></div>
+
+<div id="log"></div>
+
+<div class="bottom-nav">
+  <button id="m_bag">🎒背包</button>
+  <button id="m_skill">🌳技能</button>
+  <button id="m_shop">🏪商店</button>
+  <button id="m_rel">💌羁绊</button>
+  <button id="m_town">🏘️城镇</button>
+  <button id="reset_btn" style="color:#ff6b6b">🗑️</button>
+</div>
+
+<script>
+
+/* ================= 勇者登塔 v15 - 单文件版 ================= */
+const VERSION = "v15.1";
+
+/* ---------- 存档 ---------- */
+const Save = {
+  KEY: "tower_hero_save_v15",
+  save() {
+    try { localStorage.setItem(this.KEY, JSON.stringify(S)); return true; }
+    catch (e) { log("存档失败：" + e.message); return false; }
+  },
+  load() {
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      Object.assign(S, d);
+      return true;
+    } catch (e) { return false; }
+  },
+  wipe() { localStorage.removeItem(this.KEY); }
+};
+
+/* ---------- 工具 ---------- */
+const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function log(msg) {
+  const box = document.getElementById("log");
+  const time = new Date().toLocaleTimeString("zh-CN", { hour12: false }).slice(0, 8);
+  box.innerHTML = `<div>[${time}] ${msg}</div>` + box.innerHTML;
+  while (box.children.length > 60) box.removeChild(box.lastChild);
+}
+
+/* ---------- 职业定义（由装备决定） ---------- */
+const JOBS = {
+  none: { name: "无业游民", desc: "请装备武器与防具", stats: {} },
+  sword: { name: "剑士", desc: "攻防均衡的物理战士", stats: { atk: 3, def: 3 } },
+  mage: { name: "法师", desc: "高魔攻低防御", stats: { atk: 6, def: 0, mat: 8, mdf: 2 } },
+  thief: { name: "盗贼", desc: "高闪避与暴击", stats: { atk: 4, def: 1, agi: 8 } },
+  monk: { name: "武僧", desc: "拳脚无双，双拳当武器", stats: { atk: 5, def: 4, hp: 40 } },
+  guard: { name: "重装守卫", desc: "超高防御肉盾", stats: { atk: 1, def: 8 } },
+  gunner: { name: "枪手", desc: "远程高暴击", stats: { atk: 5, def: 0, agi: 5 } },
+  knight: { name: "圣骑士", desc: "攻防光环兼备", stats: { atk: 3, def: 5, hp: 30 } },
+  dancer: { name: "舞者", desc: "速度即力量", stats: { atk: 3, def: 1, agi: 10 } },
+  warlock: { name: "咒术师", desc: "暗属性魔攻", stats: { atk: 2, def: 0, mat: 9, mdf: 3 } },
+  druid: { name: "德鲁伊", desc: "自然回复之力", stats: { atk: 3, def: 3, hp: 30, reg: 3 } }
+};
+
+/* ---------- 装备库 ---------- */
+const WEAPONS = [
+  { id: "fist", name: "双拳", atk: 1, job: "monk" },
+  { id: "sword", name: "长剑", atk: 4, job: "sword" },
+  { id: "staff", name: "法杖", mat: 5, job: "mage" },
+  { id: "dagger", name: "匕首", atk: 3, agi: 4, job: "thief" },
+  { id: "gun", name: "火枪", atk: 6, agi: 2, job: "gunner" },
+  { id: "lance", name: "骑士枪", atk: 4, def: 2, job: "knight" },
+  { id: "whip", name: "鞭", agi: 5, job: "dancer" },
+  { id: "tome", name: "诅咒魔导书", mat: 6, mdf: 2, job: "warlock" },
+  { id: "claw", name: "兽爪", atk: 5, agi: 3, job: "druid" },
+  { id: "shield", name: "塔盾", def: 5, job: "guard" },
+  { id: "excalibur", name: "誓约胜利之剑", atk: 12, mat: 6, job: "sword" },
+  { id: "scythe", name: "死神镰刀", atk: 8, def: -2, job: "warlock" }
+];
+const ARMORS = [
+  { id: "rags", name: "破布衣", def: 0 },
+  { id: "cloth", name: "布袍", def: 1, mdf: 1 },
+  { id: "leather", name: "皮甲", def: 2, agi: 1 },
+  { id: "chain", name: "锁子甲", def: 4 },
+  { id: "plate", name: "板甲", def: 7 },
+  { id: "robe", name: "魔导长袍", mdf: 5 },
+  { id: "ninja", name: "忍装束", agi: 5, def: 1 },
+  { id: "holy", name: "圣骑士铠", def: 5, hp: 20 },
+  { id: "dancer_dress", name: "舞姬装束", agi: 6 },
+  { id: "druid_hide", name: "兽皮披风", def: 3, hp: 15 },
+  { id: "demon", name: "魔王铠", def: 6, atk: 4 },
+  { id: "hero", name: "勇者之铠", def: 8, hp: 30 }
+];
+const ACCESSORIES = [
+  { id: "none", name: "无" },
+  { id: "ring_hp", name: "生命戒指", hp: 30 },
+  { id: "ring_mp", name: "魔力戒指", mp: 30 },
+  { id: "ring_atk", name: "力量戒指", atk: 3 },
+  { id: "ring_agi", name: "敏捷戒指", agi: 3 },
+  { id: "ring_mat", name: "智慧戒指", mat: 3 },
+  { id: "amulet", name: "守护项链", def: 2, mdf: 2 },
+  { id: "charm", name: "魅惑护符", rel: 2 },
+  { id: "coin", name: "贪婪金币", goldRate: 0.2 },
+  { id: "crown", name: "魔王冠", jobLock: "demon" },
+  { id: "wing", name: "天使羽翼", flight: true }
+];
+
+/* ---------- 女主设定 ---------- */
+const GIRLS = [
+  { id: "aria", name: "艾莉娅", style: "傲娇公主", line: "哼，本公主才不需要你保护！...谢谢你。" },
+  { id: "lyra", name: "莉拉", style: "温柔护士", line: "别硬撑了，让我帮你包扎吧。" },
+  { id: "selene", name: "瑟琳", style: "冷艳魔女", line: "你的灵魂...让我很有兴趣。" },
+  { id: "fenne", name: "芬恩", style: "元气盗贼", line: "嘿嘿，下次出任务带上我嘛！" },
+  { id: "miria", name: "米莉雅", style: "寡言剑士", line: "...（轻轻点头）" },
+  { id: "ophelia", name: "奥菲莉亚", style: "病弱圣女", line: "愿光明...与你同在..." },
+  { id: "velvet", name: "薇薇特", style: "成熟老板娘", line: "今晚来店里，姐姐给你打折哦~" },
+  { id: "scarlet", name: "斯嘉丽", style: "火爆女武神", line: "弱者就该退下，别碍事！" },
+  { id: "yuki", name: "雪", style: "无口巫女", line: "...（递上一杯热茶）" },
+  { id: "rosa", name: "罗莎", style: "黑化大小姐", line: "你的一切...都要属于我哦。" }
+];
+
+/* ---------- 敌人库 ---------- */
+function genEnemy(floor) {
+  const tier = Math.floor(floor / 10);
+  const types = [
+    { name: "史莱姆", hp: 12, atk: 3, def: 0, exp: 5, gold: 3, elem: "无" },
+    { name: "哥布林", hp: 20, atk: 5, def: 1, exp: 8, gold: 5, elem: "无" },
+    { name: "骷髅兵", hp: 30, atk: 7, def: 3, exp: 12, gold: 8, elem: "无" },
+    { name: "巨蜘蛛", hp: 28, atk: 8, def: 1, exp: 14, gold: 9, elem: "毒" },
+    { name: "石像鬼", hp: 50, atk: 10, def: 6, exp: 20, gold: 14, elem: "无" },
+    { name: "黑魔法师", hp: 40, atk: 13, def: 2, exp: 25, gold: 20, elem: "暗" },
+    { name: "炎狱兽", hp: 70, atk: 16, def: 5, exp: 35, gold: 28, elem: "火" },
+    { name: "冰霜巨人", hp: 95, atk: 18, def: 8, exp: 45, gold: 35, elem: "冰" },
+    { name: "雷霆鸟", hp: 80, atk: 22, def: 4, exp: 50, gold: 40, elem: "雷" },
+    { name: "暗影刺客", hp: 65, atk: 25, def: 3, exp: 55, gold: 45, elem: "暗" },
+    { name: "龙裔守卫", hp: 130, atk: 28, def: 12, exp: 80, gold: 65, elem: "火" },
+    { name: "深渊魔将", hp: 180, atk: 35, def: 14, exp: 110, gold: 90, elem: "暗" },
+    { name: "魔界四天王", hp: 260, atk: 42, def: 18, exp: 160, gold: 130, elem: "暗" },
+    { name: "魔王", hp: 500, atk: 55, def: 25, exp: 500, gold: 500, elem: "暗", boss: true }
+  ];
+  let base = types[Math.min(tier, types.length - 1)];
+  if (floor % 10 === 0 && floor > 0) base = types[Math.min(tier, types.length - 1)];
+  const scale = 1 + floor * 0.12;
+  const e = Object.assign({}, base, {
+    maxHp: Math.floor(base.hp * scale),
+    hp: Math.floor(base.hp * scale),
+    atk: Math.floor(base.atk * scale),
+    def: Math.floor(base.def * scale),
+    exp: Math.floor(base.exp * scale),
+    gold: Math.floor(base.gold * scale)
+  });
+  if (floor === 100) { e.name = "★魔王·终焉"; e.boss = true; e.hp = e.maxHp = 1200; e.atk = 70; e.def = 30; }
+  e.id = floor + "_" + e.name;
+  return e;
+}
+
+/* ---------- 技能定义 ---------- */
+const SKILLS = {
+  sword: [{ n: "三连斩", cost: 6, dmg: 2.4 }, { n: "破甲一击", cost: 4, dmg: 1.5, ignore: true }, { n: "剑刃风暴", cost: 12, dmg: 3.5 }],
+  mage: [{ n: "火球术", cost: 5, dmg: 2.2 }, { n: "冰封术", cost: 7, dmg: 1.8, freeze: true }, { n: "陨石术", cost: 15, dmg: 4.0 }],
+  thief: [{ n: "影分身", cost: 4, dmg: 1.4, mult: 2 }, { n: "毒刃", cost: 6, dmg: 1.6, poison: 3 }, { n: "暗杀术", cost: 10, dmg: 5.0 }],
+  monk: [{ n: "波动拳", cost: 5, dmg: 2.0 }, { n: "百烈拳", cost: 8, dmg: 2.8 }, { n: "龙击拳", cost: 14, dmg: 4.2 }],
+  guard: [{ n: "嘲讽", cost: 3, taunt: true }, { n: "盾击", cost: 5, dmg: 1.6 }, { n: "绝对防御", cost: 12, shield: 0.6 }],
+  gunner: [{ n: "速射", cost: 4, dmg: 1.5, mult: 2 }, { n: "爆头", cost: 7, dmg: 3.0 }, { n: "弹幕", cost: 13, dmg: 3.8 }],
+  knight: [{ n: "圣光斩", cost: 6, dmg: 2.0 }, { n: "守护祝福", cost: 8, heal: 0.3 }, { n: "圣枪突刺", cost: 14, dmg: 4.0 }],
+  dancer: [{ n: "舞刃旋风", cost: 5, dmg: 1.8 }, { n: "魅惑之舞", cost: 7, charm: true }, { n: "终焉之舞", cost: 13, dmg: 3.6 }],
+  warlock: [{ n: "暗影箭", cost: 5, dmg: 2.1 }, { n: "诅咒", cost: 6, curse: true }, { n: "死灭宣言", cost: 15, dmg: 4.5 }],
+  druid: [{ n: "荆棘缠绕", cost: 5, dmg: 1.7 }, { n: "野性回复", cost: 7, heal: 0.35 }, { n: "兽王变身", cost: 14, beast: true }],
+  none: [{ n: "全力一击", cost: 4, dmg: 1.8 }]
+};
+
+/* ---------- 状态与初始化 ---------- */
+let S = newGame();
+
+function newGame() {
+  return {
+    day: 1, floor: 1, gold: 50, sp: 0, debt: 0, daysLeft: 0, bank: 0,
+    hp: 100, maxHp: 100, mp: 30, maxMp: 30,
+    atk: 5, def: 2, mat: 5, mdf: 3, agi: 5, reg: 0,
+    eqW: "fist", eqA: "rags", eqAc: "none",
+    items: [],
+    skills: { sword: 0, mage: 0, thief: 0, monk: 0, guard: 0, gunner: 0, knight: 0, dancer: 0, warlock: 0, druid: 0 },
+    skStr: 0, skVit: 0, skAgi: 0, skInt: 0, skWpn: 0, skArm: 0,
+    girls: GIRLS.map(g => ({ id: g.id, name: g.name, style: g.style, line: g.line, aff: 0 })),
+    partner: null,
+    demon: false, demonDays: 0,
+    runs: 0, kills: 0, bestFloor: 0,
+    flags: {}
+  };
+}
+
+function detectJob() {
+  const w = WEAPONS.find(x => x.id === S.eqW);
+  const a = ARMORS.find(x => x.id === S.eqA);
+  const ac = ACCESSORIES.find(x => x.id === S.eqAc);
+  if (ac && ac.jobLock === "demon") return "demon";
+  if (w && w.job) return w.job;
+  if (a && a.job) return a.job;
+  return "none";
+}
+
+function job() { return JOBS[detectJob()]; }
+
+function calcStats() {
+  const j = job();
+  const w = WEAPONS.find(x => x.id === S.eqW) || {};
+  const a = ARMORS.find(x => x.id === S.eqA) || {};
+  const ac = ACCESSORIES.find(x => x.id === S.eqAc) || {};
+  let atk = 5 + S.skStr * 2 + S.skWpn * 3, def = 2 + S.skArm * 2, mat = 5 + S.skInt * 2, mdf = 3 + S.skInt, agi = 5 + S.skAgi * 2;
+  let maxHp = 100 + S.skVit * 15 + S.skArm * 10, maxMp = 30 + S.skInt * 5;
+  const add = (o) => { atk += o.atk || 0; def += o.def || 0; mat += o.mat || 0; mdf += o.mdf || 0; agi += o.agi || 0; maxHp += o.hp || 0; maxMp += o.mp || 0; };
+  add(w); add(a); add(ac); add(j.stats || {});
+  if (S.demon) { atk += 8; def += 4; mat += 6; maxHp += 50; }
+  S.atk = atk; S.def = def; S.mat = mat; S.mdf = mdf; S.agi = agi;
+  S.maxHp = maxHp; S.maxMp = maxMp;
+  S.hp = clamp(S.hp, 0, maxHp); S.mp = clamp(S.mp, 0, maxMp);
+}
+
+/* ---------- 战斗 ---------- */
+const Battle = {
+  e: null, turn: 0, shield: 0, frozen: 0, poison: 0, curse: 0, beast: 0, defending: false,
+  start(floor) {
+    this.e = genEnemy(floor);
+    this.turn = 0; this.shield = 0; this.frozen = 0; this.poison = 0; this.curse = 0; this.beast = 0; this.defending = false;
+    calcStats();
+    log(`🗼 第 ${floor} 层 - 遭遇 ${this.e.name}！`);
+    show("battle");
+    this.render();
+  },
+  render() {
+    const e = this.e;
+    el("b_title").textContent = `第 ${S.floor} 层 · ${e.name}` + (e.boss ? " 👑" : "");
+    el("b_enemy").innerHTML = `❤️ ${Math.max(0, e.hp)}/${e.maxHp}　🗡️ ${e.atk}　🛡️ ${e.def}` + (e.elem !== "无" ? `　🔥${e.elem}` : "");
+    const st = [];
+    if (this.frozen) st.push(`❄️${this.frozen}`);
+    if (this.poison) st.push(`☠️${this.poison}`);
+    if (this.curse) st.push(`👁️${this.curse}`);
+    el("b_status").textContent = st.join("  ");
+    el("b_player").innerHTML = `❤️ ${S.hp}/${S.maxHp}　🔮 ${S.mp}/${S.maxMp}　🗡️ ${S.atk}　🛡️ ${S.def}` + (this.shield ? `　🛡️护盾${this.shield}` : "") + (this.beast ? "　🐺狂化" : "");
+    const sk = SKILLS[detectJob()] || SKILLS.none;
+    const btns = el("b_skills").children;
+    for (let i = 0; i < btns.length; i++) {
+      btns[i].textContent = `${sk[i].n} (${sk[i].cost}MP)`;
+      btns[i].disabled = S.mp < sk[i].cost;
+    }
+    el("b_flee").disabled = e.boss;
+    el("b_attack").disabled = false;
+  },
+  playerTurn(act) {
+    if (!this.e) return;
+    if (this.frozen > 0) { log("你被冻结了，无法行动！"); this.frozen--; this.enemyTurn(); return; }
+    let dmg = 0, info = "";
+    if (act === "attack") {
+      dmg = Math.max(1, S.atk - this.e.def + rand(-1, 2));
+      const crit = Math.random() < S.agi * 0.01;
+      if (crit) dmg = Math.floor(dmg * 1.8);
+      info = crit ? "（暴击！）" : "";
+    } else {
+      const sk = SKILLS[detectJob()] || SKILLS.none;
+      const s = sk[act];
+      if (S.mp < s.cost) { log("魔力不足！"); this.render(); return; }
+      S.mp -= s.cost;
+      dmg = Math.floor((s.dmg) * (S.atk + S.mat) - this.e.def * (s.ignore ? 0.3 : 1));
+      dmg = Math.max(1, dmg);
+      if (s.mult) { dmg = Math.floor(dmg * 0.7); info = `(×${s.mult})`; }
+      if (s.freeze) { this.frozen = 2; info += " ❄️冻结！"; }
+      if (s.poison) { this.poison = s.poison; info += " ☠️中毒！"; }
+      if (s.curse) { this.curse = 3; info += " 👁️诅咒！"; }
+      if (s.heal) { const h = Math.floor(S.maxHp * s.heal); S.hp = clamp(S.hp + h, 0, S.maxHp); info += ` 💚+${h}`; }
+      if (s.shield) { this.shield = Math.floor(S.maxHp * s.shield); info += ` 🛡️护盾`; }
+      if (s.charm) { log("敌人陷入混乱！攻击落空！"); this.render(); this.enemyTurn(true); return; }
+      if (s.beast) { this.beast = 4; info += " 🐺变身！"; }
+      if (s.taunt) { info += " 嘲讽！"; }
+    }
+    if (this.beast) dmg = Math.floor(dmg * 1.4);
+    this.e.hp -= dmg;
+    log(`你${act === "attack" ? "攻击" : ""}造成 ${dmg} 伤害 ${info}`);
+    if (this.e.hp <= 0) return this.win();
+    this.render();
+    this.enemyTurn();
+  },
+  enemyTurn(skip) {
+    if (this.poison > 0) { this.e.hp -= 5; log(`☠️敌人受到 5 点中毒伤害`); this.poison--; if (this.e.hp <= 0) return this.win(); }
+    if (skip) { this.render(); return; }
+    let dmg = Math.max(1, this.e.atk - S.def + rand(-1, 1));
+    if (this.curse) { dmg = Math.floor(dmg * 1.3); this.curse--; }
+    if (this.shield > 0) { const absorb = Math.min(this.shield, dmg); dmg -= absorb; this.shield -= absorb; log(`🛡️护盾抵挡 ${absorb}`); }
+    if (this.defending) { dmg = Math.floor(dmg * 0.5); this.defending = false; }
+    S.hp -= dmg;
+    log(`${this.e.name} 攻击你，受到 ${dmg} 伤害`);
+    if (S.hp <= 0) return this.lose();
+    this.render();
+  },
+  win() {
+    S.kills++; S.gold += this.e.gold; S.sp += Math.max(1, Math.floor(this.e.exp / 10));
+    S.bestFloor = Math.max(S.bestFloor, S.floor);
+    log(`🎉 击败 ${this.e.name}！获得 ${this.e.gold} 金 / ${Math.max(1, Math.floor(this.e.exp / 10))} SP`);
+    this.e = null;
+    show("main"); renderMain();
+  },
+  lose() {
+    log("💀 你倒下了...");
+    const lose = Math.floor(S.gold * 0.3);
+    S.gold -= lose; S.hp = Math.floor(S.maxHp * 0.5); S.floor = Math.max(1, S.floor - 1);
+    S.runs++;
+    log(`丢失 ${lose} 金币，退回到第 ${S.floor} 层。`);
+    this.e = null;
+    show("main"); this.renderMain();
+  },
+  next() {
+    S.floor++;
+    if (S.floor > S.bestFloor) S.bestFloor = S.floor;
+    if (S.floor % 5 === 0) { log(`📜 第 ${S.floor} 层，发现宝箱！`); this.loot(); }
+    this.start(S.floor);
+  },
+  loot() {
+    const r = Math.random();
+    if (r < 0.5) { const gold = rand(20, 80) * Math.floor(S.floor / 5 + 1); S.gold += gold; log(`获得 ${gold} 金币`); }
+    else if (r < 0.8) { const it = pick(["回复药", "魔力药", "解毒草", "圣水"]); S.items.push({ name: it, type: "consume" }); log(`获得道具：${it}`); }
+    else { const w = pick(WEAPONS); log(`发现装备：${w.name}（${JOBS[w.job].name}）`); }
+  }
+};
+
+/* ---------- 主流程 ---------- */
+function el(id) { return document.getElementById(id); }
+function show(panel) {
+  ["main", "battle", "bag", "skill", "shop", "rel", "town"].forEach(p => el("p_" + p).classList.toggle("hide", p !== panel));
+}
+function dayMult() { return 1 + (S.day - 1) * 0.05; }
+
+function rest() {
+  S.day++; S.hp = S.maxHp; S.mp = S.maxMp;
+  calcStats();
+  log(`🛏️ 第 ${S.day} 天，你休息了一晚，状态全满。`);
+  if (S.partner) { log(`${S.girls.find(g => g.id === S.partner).name} 陪你度过了温暖的一夜。`); S.girls.find(g => g.id === S.partner).aff += 2; }
+  if (S.demonDays > 0) { S.demonDays--; if (S.demonDays === 0) { S.demon = false; log("🌅 魔王之力消退，你恢复了人性。"); } }
+  if (S.debt > 0) {
+    S.daysLeft--;
+    if (S.daysLeft <= 0) {
+      const total = S.debt;
+      if (S.gold >= total) { S.gold -= total; log(`🏦 还清了 ${total} 金币的债务。`); }
+      else { log(`🏦 无力偿还 ${total} 金币，钱庄将收取你的抵押物...`); S.partner = null; }
+      S.debt = 0;
+    }
+  }
+  renderMain();
+}
+
+function renderMain() {
+  calcStats();
+  const j = job();
+  let html = `<div class="title">🗼 勇者登塔 ${VERSION}</div>`;
+  html += `<div class="day">第 ${S.day} 天　🗓️ 倍率 x${dayMult().toFixed(2)}</div>`;
+  html += `<div class="stat"><span>❤️ HP</span><div class="bar"><i style="width:${S.hp / S.maxHp * 100}%"></i></div><b>${S.hp}/${S.maxHp}</b></div>`;
+  html += `<div class="stat"><span>🔮 MP</span><div class="bar mp"><i style="width:${S.mp / S.maxMp * 100}%"></i></div><b>${S.mp}/${S.maxMp}</b></div>`;
+  html += `<div class="grid">
+    <div>🗡️ 攻 ${S.atk}</div><div>🛡️ 防 ${S.def}</div>
+    <div>🔥 魔 ${S.mat}</div><div>✨ 抗 ${S.mdf}</div>
+    <div>💨 敏 ${S.agi}</div><div>⭐ SP ${S.sp}</div>
+  </div>`;
+  html += `<div class="job">🧭 职业：<b>${j.name}</b> <small>${j.desc}</small></div>`;
+  html += `<div class="eq">🗡️ ${WEAPONS.find(w => w.id === S.eqW).name}　🛡️ ${ARMORS.find(a => a.id === S.eqA).name}　💍 ${ACCESSORIES.find(c => c.id === S.eqAc).name}</div>`;
+  html += `<div class="gold">💰 金币：${S.gold}</div>`;
+  if (S.bank > 0) html += `<div class="gold">🏦 存款：${S.bank}（日息 5%）</div>`;
+  if (S.debt > 0) html += `<div class="warn">🏦 欠款 ${S.debt}，剩余 ${S.daysLeft} 天！</div>`;
+  if (S.demon) html += `<div class="warn">👿 魔王化中（剩 ${S.demonDays} 天）</div>`;
+  if (S.partner) html += `<div class="love">💕 伴侣：${S.girls.find(g => g.id === S.partner).name}</div>`;
+  html += `<div class="floor">🗼 已抵达：第 ${S.floor} 层（历史最深 ${S.bestFloor}）</div>`;
+  el("m_stat").innerHTML = html;
+}
+
+/* ---------- 背包 ---------- */
+function renderBag() {
+  calcStats();
+  let html = `<div class="title">🎒 背包</div>`;
+  html += `<div class="job">🗡️ 武器：<b>${WEAPONS.find(w => w.id === S.eqW).name}</b>（${JOBS[WEAPONS.find(w => w.id === S.eqW).job].name}）</div>`;
+  html += `<div class="job">🛡️ 防具：<b>${ARMORS.find(a => a.id === S.eqA).name}</b></div>`;
+  html += `<div class="job">💍 饰品：<b>${ACCESSORIES.find(c => c.id === S.eqAc).name}</b></div>`;
+  html += `<div class="sub">— 可装备武器 —</div><div class="list">`;
+  WEAPONS.forEach(w => { html += `<button class="li ${S.eqW === w.id ? "on" : ""}" onclick="equipW('${w.id}')">${w.name}（${JOBS[w.job].name}） +${w.atk || 0}攻</button>`; });
+  html += `</div><div class="sub">— 可装备防具 —</div><div class="list">`;
+  ARMORS.forEach(a => { html += `<button class="li ${S.eqA === a.id ? "on" : ""}" onclick="equipA('${a.id}')">${a.name} +${a.def || 0}防</button>`; });
+  html += `</div><div class="sub">— 饰品 —</div><div class="list">`;
+  ACCESSORIES.forEach(c => { html += `<button class="li ${S.eqAc === c.id ? "on" : ""}" onclick="equipC('${c.id}')">${c.name}</button>`; });
+  html += `</div><div class="sub">— 消耗品 —</div><div class="list">`;
+  const con = S.items.filter(i => i.type === "consume");
+  if (con.length === 0) html += `<div class="empty">（空）</div>`;
+  con.forEach((it, idx) => { html += `<button class="li" onclick="useItem(${idx})">${it.name}</button>`; });
+  html += `</div>`;
+  el("bag_body").innerHTML = html;
+}
+function equipW(id) { S.eqW = id; calcStats(); log(`装备了 ${WEAPONS.find(w => w.id === id).name}，职业变为 ${JOBS[WEAPONS.find(w => w.id === id).job].name}。`); renderBag(); renderMain(); }
+function equipA(id) { S.eqA = id; calcStats(); renderBag(); renderMain(); }
+function equipC(id) { S.eqAc = id; calcStats(); renderBag(); renderMain(); }
+function useItem(idx) {
+  const list = [];
+  for (let i = 0; i < S.items.length; i++) if (S.items[i].type === "consume") list.push(i);
+  const real = list[idx];
+  if (real === undefined) return;
+  const it = S.items[real];
+  if (it.name === "回复药") S.hp = clamp(S.hp + 50, 0, S.maxHp);
+  else if (it.name === "魔力药") S.mp = clamp(S.mp + 30, 0, S.maxMp);
+  else if (it.name === "解毒草") { Battle.poison = 0; log("中毒状态已解除。"); }
+  else if (it.name === "圣水") { S.hp = S.maxHp; log("圣水洗净一切，HP 全满！"); }
+  S.items.splice(real, 1);
+  log(`使用了 ${it.name}。`);
+  renderBag(); renderMain();
+}
+
+/* ---------- 技能 ---------- */
+function renderSkill() {
+  let html = `<div class="title">🌳 技能 <small>SP: ${S.sp}</small></div>`;
+  const rows = [
+    ["skStr", "💪 力量", "物理攻击 +2/级", 5],
+    ["skVit", "🛡️ 体质", "最大HP +15/级", 5],
+    ["skAgi", "💨 敏捷", "闪避暴击 +/级", 5],
+    ["skInt", "🔮 智力", "魔力与魔攻 +/级", 5],
+    ["skWpn", "⚔️ 武器专精", "物理攻击 +3/级", 8],
+    ["skArm", "🛡️ 防具专精", "防御 +2 HP+10/级", 8]
+  ];
+  rows.forEach(([k, n, d, cost]) => {
+    html += `<div class="skill"><span>${n} <small>Lv.${S[k]} ${d}</small></span><button onclick="upSkill('${k}',${cost})" ${S.sp < cost ? "disabled" : ""}>升级 ${cost}SP</button></div>`;
+  });
+  html += `<div class="sub">— 职业技能（装备对应武器解锁）—</div>`;
+  Object.keys(JOBS).forEach(k => {
+    if (k === "none") return;
+    const owned = S.skills[k] || 0;
+    const cost = 10 + owned * 5;
+    html += `<div class="skill"><span>${JOBS[k].name} <small>Lv.${owned}</small></span><button onclick="upJob('${k}',${cost})" ${S.sp < cost ? "disabled" : ""}>升级 ${cost}SP</button></div>`;
+  });
+  el("skill_body").innerHTML = html;
+}
+function upSkill(k, cost) { if (S.sp >= cost) { S.sp -= cost; S[k]++; calcStats(); log("升级成功！"); renderSkill(); renderMain(); } }
+function upJob(k, cost) { if (S.sp >= cost) { S.sp -= cost; S.skills[k] = (S.skills[k] || 0) + 1; log(`${JOBS[k].name} 技能等级提升！`); renderSkill(); } }
+
+/* ---------- 商店 ---------- */
+function renderShop() {
+  el("shop_body").innerHTML = `
+    <div class="title">🏪 商店 / 钱庄</div>
+    <div class="gold">💰 金币：${S.gold}　🏦 存款：${S.bank}</div>
+    <div class="sub">— 道具 —</div>
+    <button class="li" onclick="buy('hp')">回复药 30金（回复50HP）</button>
+    <button class="li" onclick="buy('mp')">魔力药 25金（回复30MP）</button>
+    <button class="li" onclick="buy('holy')">圣水 80金（全回复）</button>
+    <div class="sub">— 钱庄 —</div>
+    <button class="li" onclick="bankIn()">存入（可存可贷，日息5%）</button>
+    <button class="li" onclick="bankOut()">取出</button>
+    <button class="li warn" onclick="loan()">借贷（需抵押伴侣）</button>
+    <div class="sub">— 赌博 —</div>
+    <button class="li" onclick="gamble()">赌场（10金，50%翻倍）</button>`;
+}
+function buy(t) {
+  const p = { hp: 30, mp: 25, holy: 80 }[t];
+  if (S.gold < p) { log("金币不足！"); return; }
+  S.gold -= p;
+  if (t === "holy") S.hp = S.maxHp; else S.items.push({ name: { hp: "回复药", mp: "魔力药", holy: "圣水" }[t], type: "consume" });
+  log(`购买了道具。`); renderShop(); renderMain();
+}
+function bankIn() { const a = typeof prompt==="function" ? prompt("存入多少金币？", "100") : "0"; if (!a) return; const n = parseInt(a); if (isNaN(n) || n <= 0 || n > S.gold) { log("金额无效"); return; } S.gold -= n; S.bank += n; log(`存入 ${n} 金币。`); renderShop(); renderMain(); }
+function bankOut() { const a = typeof prompt==="function" ? prompt("取出多少？", "100") : "0"; if (!a) return; const n = parseInt(a); if (isNaN(n) || n <= 0 || n > S.bank) { log("金额无效"); return; } S.bank -= n; S.gold += n; log(`取出 ${n} 金币。`); renderShop(); renderMain(); }
+function loan() {
+  if (!S.partner) { log("借贷需要抵押你的伴侣！（先去羁绊界面选择伴侣）"); return; }
+  const a = typeof prompt==="function" ? prompt("借贷多少金币？（7天后连本带息偿还，否则伴侣归钱庄）", "200") : "0";
+  if (!a) return; const n = parseInt(a); if (isNaN(n) || n <= 0) return;
+  S.gold += n; S.debt += Math.floor(n * 1.2); S.daysLeft = 7;
+  log(`借得 ${n} 金币，欠款 ${S.debt}（7天）。伴侣 ${S.girls.find(g => g.id === S.partner).name} 已被抵押！`);
+  renderShop(); renderMain();
+}
+function gamble() {
+  if (S.gold < 10) { log("金币不足！"); return; }
+  S.gold -= 10;
+  if (Math.random() < 0.5) { S.gold += 25; log("🎉 赌赢了！获得 25 金币。"); } else log("😢 赌输了...");
+  renderShop(); renderMain();
+}
+
+/* ---------- 羁绊 ---------- */
+function renderRel() {
+  let html = `<div class="title">💌 羁绊</div>`;
+  S.girls.forEach(g => {
+    html += `<div class="girl ${S.partner === g.id ? "on" : ""}">
+      <div class="gname">${g.name} <small>${g.style}</small></div>
+      <div class="bar"><i style="width:${g.aff}%"></i></div>
+      <div class="grow">
+        <button onclick="talk('${g.id}')">搭话</button>
+        <button onclick="gift('${g.id}')">送礼</button>
+        <button onclick="date('${g.id}')">约会</button>
+        ${g.aff >= 60 ? `<button onclick="partner('${g.id}')">${S.partner === g.id ? "✓伴侣" : "结为伴侣"}</button>` : ""}
+      </div>
+      <div class="quote">"${g.line}"</div>
+    </div>`;
+  });
+  el("rel_body").innerHTML = html;
+}
+function talk(id) { const g = S.girls.find(x => x.id === id); if (g.aff >= 100) { log(`${g.name}：我们已经是最亲密的人了~`); return; } g.aff = clamp(g.aff + rand(2, 6), 0, 100); log(`与 ${g.name} 聊了聊，好感度 ${g.aff}。`); renderRel(); }
+function gift(id) { const g = S.girls.find(x => x.id === id); if (S.gold < 20) { log("金币不足！"); return; } S.gold -= 20; g.aff = clamp(g.aff + rand(5, 12), 0, 100); log(`送给 ${g.name} 一份礼物，好感度 ${g.aff}。`); renderRel(); renderMain(); }
+function date(id) {
+  const g = S.girls.find(x => x.id === id);
+  if (S.gold < 50) { log("金币不足！约会需要 50 金。"); return; }
+  S.gold -= 50; S.day++; g.aff = clamp(g.aff + rand(10, 20), 0, 100);
+  if (Math.random() < 0.3) { S.demon = true; S.demonDays = 3; log(`约会中发生了诡异的事...你体内涌出黑暗力量（魔王化 3 天）！`); }
+  log(`与 ${g.name} 度过了一段美好时光，好感度 ${g.aff}。`); renderRel(); renderMain();
+}
+function partner(id) { S.partner = id; log(`💕 你与 ${S.girls.find(g => g.id === id).name} 结为伴侣！`); renderRel(); renderMain(); }
+
+/* ---------- 城镇 ---------- */
+function renderTown() {
+  el("town_body").innerHTML = `
+    <div class="title">🏘️ 城镇</div>
+    <div class="sub">— 特殊设施 —</div>
+    <button class="li" onclick="train()">🏋️ 训练场（消耗100金，随机属性+1）</button>
+    <button class="li" onclick="church()">⛪ 教会（消耗50金，解除诅咒/中毒）</button>
+    <button class="li" onclick="alchemy()">🧪 炼金工房（消耗道具合成装备）</button>
+    <button class="li" onclick="arena()">🏟️ 竞技场（挑战强敌，高风险高回报）</button>
+    <button class="li" onclick="demonPact()">👿 魔王契约（永久魔王化，失去伴侣）</button>
+    <div class="sub">— 记录 —</div>
+    <div class="job">🗡️ 击败敌人：${S.kills}　💀 阵亡次数：${S.runs}　🗼 最深：${S.bestFloor}</div>`;
+}
+function train() { if (S.gold < 100) { log("金币不足！"); return; } S.gold -= 100; const k = pick(["skStr", "skVit", "skAgi", "skInt"]); S[k]++; calcStats(); log(`训练中... ${k} 提升了！`); renderTown(); renderMain(); }
+function church() { if (S.gold < 50) { log("金币不足！"); return; } S.gold -= 50; Battle.poison = 0; Battle.curse = 0; log("教会的圣光净化了你的异常状态。"); renderTown(); }
+function alchemy() {
+  const w = pick(WEAPONS); const a = pick(ARMORS);
+  if (S.gold < 150) { log("金币不足！"); return; } S.gold -= 150;
+  if (Math.random() < 0.5) { log(`炼金成功！获得 ${w.name}！`); } else log("炼金失败了...材料化为乌有。");
+  renderTown();
+}
+function arena() {
+  const e = genEnemy(S.bestFloor + 5);
+  e.hp = e.maxHp = Math.floor(e.maxHp * 1.5); e.atk = Math.floor(e.atk * 1.3);
+  Battle.e = e; Battle.turn = 0; calcStats();
+  log(`🏟️ 竞技场挑战：${e.name}！`);
+  show("battle"); Battle.render();
+}
+function demonPact() {
+  if (S.demon) { log("你已经是魔王了。"); return; }
+  if (typeof confirm === "function" && !confirm("签订魔王契约将永久魔王化，失去伴侣，确定吗？")) return;
+  S.demon = true; S.demonDays = 99999; S.partner = null; S.eqAc = "crown";
+  calcStats(); log("👿 你签订了魔王契约，成为了魔王！失去伴侣，获得黑暗之力。"); renderTown(); renderMain();
+}
+
+/* ---------- 绑定 ---------- */
+function bind(id, fn) { const b = el(id); if (b) b.onclick = fn; }
+window.onload = () => {
+  if (Save.load()) { log("读档成功。"); } else { log("欢迎来到勇者登塔，新游戏开始！"); calcStats(); }
+  renderMain();
+  bind("b_rest", rest);
+  bind("b_tower", () => Battle.start(S.floor));
+  bind("b_next", () => Battle.next());
+  bind("b_floor10", () => { S.floor = Math.floor(S.floor / 10) * 10 + 10; Battle.start(S.floor); });
+  bind("b_attack", () => Battle.playerTurn("attack"));
+  bind("b_skill0", () => Battle.playerTurn(0));
+  bind("b_skill1", () => Battle.playerTurn(1));
+  bind("b_skill2", () => Battle.playerTurn(2));
+  bind("b_defend", () => { Battle.defending = true; log("你进入防御姿态。"); Battle.render(); Battle.enemyTurn(); });
+  bind("b_flee", () => { if (Math.random() < 0.6 || Battle.e.boss) { log("成功逃脱！"); Battle.e = null; show("main"); renderMain(); } else { log("逃脱失败！"); Battle.render(); Battle.enemyTurn(); } });
+  bind("m_bag", () => { renderBag(); show("bag"); });
+  bind("m_skill", () => { renderSkill(); show("skill"); });
+  bind("m_shop", () => { renderShop(); show("shop"); });
+  bind("m_rel", () => { renderRel(); show("rel"); });
+  bind("m_town", () => { renderTown(); show("town"); });
+  bind("back_main", renderMain);
+  bind("save_btn", () => { Save.save() ? log("💾 游戏已保存。") : log("保存失败"); });
+  bind("reset_btn", () => { if (typeof confirm !== "function" || confirm("确定要重置游戏吗？")) { Save.wipe(); S = newGame(); calcStats(); renderMain(); log("游戏已重置。"); } });
+  // 快捷键
+  document.addEventListener("keydown", e => {
+    if (el("p_battle").classList.contains("hide")) return;
+    if (e.key === "a" || e.key === "A") Battle.playerTurn("attack");
+    if (e.key === "d" || e.key === "D") { Battle.defending = true; log("防御。"); Battle.render(); Battle.enemyTurn(); }
+    if (e.key === "f" || e.key === "F") el("b_flee").click();
+  });
+  window.S = S; window.Save = Save;
+  setInterval(() => { if (S.bank > 0) {} }, 60000);
+};
+
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
